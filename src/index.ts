@@ -48,27 +48,30 @@ const crawl = async () => {
       const context = await browser.createIncognitoBrowserContext();
       const page = await context.newPage();
       page.setDefaultTimeout(Number(process.env.PUPPETEER_GLOBAL_TIMEOUT!));
-      let links: Array<string> = [];
+
       try {
+        await page.goto(source.url);
+      } catch (err) {
+        logger.error("unable to go to the source page: " + source.source);
+        logger.error(err);
+        return [];
+      }
+
+      if (source.onEntry) {
         try {
-          await page.goto(source.url);
+          source.onEntry(page);
         } catch (err) {
-          logger.error("unable to go to the source page: " + source.source);
+          logger.error("unable execute onEntry function: " + source.source);
           logger.error(err);
           return [];
         }
-        if (source.onEntry) {
-          try {
-            source.onEntry(page);
-          } catch (err) {
-            logger.error("unable execute onEntry function: " + source.source);
-            logger.error(err);
-            return [];
-          }
-        }
+      }
+
+      let links: Array<string> = [];
+      try {
         links = await getLinks(page, source);
       } catch (err) {
-        logger.error("unable to parse links: " + source.source);
+        logger.error("unable to get vacancy urls: " + source.source);
         logger.error(err);
         return [];
       }
